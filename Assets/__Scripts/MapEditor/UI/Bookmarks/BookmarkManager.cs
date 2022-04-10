@@ -8,11 +8,10 @@ using UnityEngine.Serialization;
 
 public class BookmarkManager : MonoBehaviour, CMInput.IBookmarksActions
 {
-    private static readonly System.Random rng = new System.Random();
-
     [SerializeField] private GameObject bookmarkContainerPrefab;
     [FormerlySerializedAs("atsc")] public AudioTimeSyncController Atsc;
     [FormerlySerializedAs("tipc")] public TimelineInputPlaybackController Tipc;
+
     [SerializeField] private RectTransform timelineCanvas;
 
     public InputAction.CallbackContext ShiftContext;
@@ -25,38 +24,9 @@ public class BookmarkManager : MonoBehaviour, CMInput.IBookmarksActions
 
     private float previousCanvasWidth;
 
-    private DialogBox createBookmarkDialogBox;
-    private TextBoxComponent bookmarkName;
-    private NestedColorPickerComponent bookmarkColor;
-
     private IEnumerator Start()
     {
-        // Create and cache dialog box for later use
-        createBookmarkDialogBox = PersistentUI.Instance
-            .CreateNewDialogBox()
-            .WithTitle("Mapper", "bookmark.dialog")
-            .DontDestroyOnClose();
-
-        bookmarkName = createBookmarkDialogBox
-            .AddComponent<TextBoxComponent>()
-            .WithLabel("Mapper", "bookmark.dialog.name")
-            .WithInitialValue("Mapper", "bookmark.dialog.default");
-
-        bookmarkColor = createBookmarkDialogBox
-            .AddComponent<NestedColorPickerComponent>()
-            .WithLabel("Mapper", "bookmark.dialog.color")
-            .WithConstantAlpha(1f);
-
-        // Cancel button
-        createBookmarkDialogBox.AddFooterButton(null, "PersistentUI", "cancel");
-
-        // Submit/OK button
-        createBookmarkDialogBox.AddFooterButton(
-            () => CreateNewBookmark(bookmarkName.Value, bookmarkColor.Value), "PersistentUI", "ok");
-
-        // Wait for time
-        yield return new WaitForSeconds(0.1f);
-
+        yield return new WaitForSeconds(0.1f); //Wait for time
         bookmarkContainers = BeatSaberSongContainer.Instance.Map.Bookmarks.Select(bookmark =>
         {
             var container = Instantiate(bookmarkContainerPrefab, transform).GetComponent<BookmarkContainer>();
@@ -81,9 +51,8 @@ public class BookmarkManager : MonoBehaviour, CMInput.IBookmarksActions
     {
         if (context.performed)
         {
-            // Randomize color and open dialog box
-            bookmarkColor.Value = Color.HSVToRGB((float)rng.NextDouble(), 0.75f, 1);
-            createBookmarkDialogBox.Open();
+            PersistentUI.Instance.ShowInputBox("Mapper", "bookmark.dialog", HandleNewBookmarkName,
+                "bookmark.dialog.default");
         }
     }
 
@@ -99,20 +68,10 @@ public class BookmarkManager : MonoBehaviour, CMInput.IBookmarksActions
         OnPreviousBookmark();
     }
 
-    internal void CreateNewBookmark(string name, Color? color = null)
+    internal void HandleNewBookmarkName(string res)
     {
-        if (string.IsNullOrEmpty(name) || string.IsNullOrWhiteSpace(name))
-        {
-            return;
-        }
-
-        var newBookmark = new BeatmapBookmark(Atsc.CurrentBeat, name);
-
-        if (color != null)
-        {
-            newBookmark.Color = color.Value;
-        }
-
+        if (string.IsNullOrEmpty(res) || string.IsNullOrWhiteSpace(res)) return;
+        var newBookmark = new BeatmapBookmark(Atsc.CurrentBeat, res);
         var container = Instantiate(bookmarkContainerPrefab, transform).GetComponent<BookmarkContainer>();
         container.name = newBookmark.Name;
         container.Init(this, newBookmark);

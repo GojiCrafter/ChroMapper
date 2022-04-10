@@ -361,7 +361,7 @@ public class PlatformDescriptor : MonoBehaviour
                     light.UpdateTargetAlpha(1, 0);
                     light.UpdateMultiplyAlpha(color.a);
                     light.UpdateTargetColor(color.Multiply(LightsManager.HDRFlashIntensity), 0);
-                    light.UpdateTargetColor(color.Multiply(LightsManager.HDRIntensity), LightsManager.FlashTime);
+                    light.UpdateTargetColor(color.Multiply(LightsManager.HDRIntensity), LightsManager.FadeTime);
                     break;
                 case MapEvent.LightValueBlueFade:
                 case MapEvent.LightValueRedFade:

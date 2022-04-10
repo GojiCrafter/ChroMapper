@@ -6,6 +6,8 @@ public class BeatmapNoteContainer : BeatmapObjectContainer
 {
     private static readonly Color unassignedColor = new Color(0.1544118f, 0.1544118f, 0.1544118f);
 
+    private static readonly int alwaysTranslucent = Shader.PropertyToID("_AlwaysTranslucent");
+
     [FormerlySerializedAs("mapNoteData")] public BeatmapNote MapNoteData;
 
     [SerializeField] private GameObject simpleBlock;
@@ -16,6 +18,8 @@ public class BeatmapNoteContainer : BeatmapObjectContainer
     [SerializeField] private MeshRenderer dotRenderer;
     [SerializeField] private MeshRenderer arrowRenderer;
     [SerializeField] private SpriteRenderer swingArcRenderer;
+
+    private bool currentState;
 
     public override BeatmapObject ObjectData { get => MapNoteData; set => MapNoteData = (BeatmapNote)value; }
 
@@ -34,29 +38,14 @@ public class BeatmapNoteContainer : BeatmapObjectContainer
         }
 
         SetArcVisible(NotesContainer.ShowArcVisualizer);
+        CheckTranslucent();
     }
 
     internal static Vector3 Directionalize(BeatmapNote mapNoteData)
     {
         if (mapNoteData is null) return Vector3.zero;
-        int cutDirection = mapNoteData.CutDirection;
-        var directionEuler = Directionalize(cutDirection);
-        if (mapNoteData.CustomData?.HasKey("_cutDirection") ?? false)
-        {
-            directionEuler = new Vector3(0, 0, mapNoteData.CustomData["_cutDirection"]?.AsFloat ?? 0);
-        }
-        else if ((mapNoteData is BeatmapColorNote newMapNoteData) && (newMapNoteData?.AngleOffset != 0)) directionEuler += new Vector3(0, 0, newMapNoteData.AngleOffset);
-        else
-        {
-            if (cutDirection >= 1000) directionEuler += new Vector3(0, 0, 360 - (cutDirection - 1000));
-        }
-
-        return directionEuler;
-    }
-
-    internal static Vector3 Directionalize(int cutDirection)
-    {
         var directionEuler = Vector3.zero;
+        var cutDirection = mapNoteData.CutDirection;
         switch (cutDirection)
         {
             case BeatmapNote.NoteCutDirectionUp:
@@ -83,9 +72,17 @@ public class BeatmapNoteContainer : BeatmapObjectContainer
             case BeatmapNote.NoteCutDirectionDownRight:
                 directionEuler += new Vector3(0, 0, 45);
                 break;
-            default:
-                break;
         }
+
+        if (mapNoteData.CustomData?.HasKey("_cutDirection") ?? false)
+        {
+            directionEuler = new Vector3(0, 0, mapNoteData.CustomData["_cutDirection"]?.AsFloat ?? 0);
+        }
+        else
+        {
+            if (cutDirection >= 1000) directionEuler += new Vector3(0, 0, 360 - (cutDirection - 1000));
+        }
+
         return directionEuler;
     }
 
@@ -120,18 +117,34 @@ public class BeatmapNoteContainer : BeatmapObjectContainer
         transform.localPosition = (Vector3)MapNoteData.GetPosition() +
                                   new Vector3(0, 0.5f, MapNoteData.Time * EditorScaleController.EditorScale);
         transform.localScale = MapNoteData.GetScale() + new Vector3(0.5f, 0.5f, 0.5f);
-
         UpdateCollisionGroups();
-
-        MaterialPropertyBlock.SetFloat("_ObjectTime", MapNoteData.Time);
         SetRotation(AssignedTrack != null ? AssignedTrack.RotationValue.y : 0);
-        UpdateMaterials();
+    }
+
+    public void CheckTranslucent()
+    {
+        var newState = transform.parent != null && transform.localPosition.z + transform.parent.localPosition.z <=
+            BeatmapObjectContainerCollection.TranslucentCull;
+        if (newState != currentState)
+        {
+            MaterialPropertyBlock.SetFloat(alwaysTranslucent, newState ? 1 : 0);
+            UpdateMaterials();
+            currentState = newState;
+        }
     }
 
     public void SetColor(Color? color)
     {
         MaterialPropertyBlock.SetColor(BeatmapObjectContainer.color, color ?? unassignedColor);
         UpdateMaterials();
+    }
+
+    public override void AssignTrack(Track track)
+    {
+        if (AssignedTrack != null) AssignedTrack.TimeChanged -= CheckTranslucent;
+
+        base.AssignTrack(track);
+        track.TimeChanged += CheckTranslucent;
     }
 
     internal override void UpdateMaterials()

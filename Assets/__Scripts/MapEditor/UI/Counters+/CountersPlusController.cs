@@ -39,16 +39,14 @@ public class CountersPlusController : MonoBehaviour
     [FormerlySerializedAs("minutes")] [HideInInspector] public int minutes;
     [FormerlySerializedAs("seconds")] [HideInInspector] public int seconds;
 
-
-    public int NotesCount =>
-       notes.LoadedObjects.Where(note => ((BeatmapNote)note).Type != BeatmapNote.NoteTypeBomb).Count();
-
+    public int NotesCount
+        => notes.LoadedObjects.Where(note => ((BeatmapNote)note).Type != BeatmapNote.NoteTypeBomb).Count();
 
     public float NPSCount => NotesCount / cameraAudioSource.clip.length;
 
     public int NotesSelected
         => SelectionController.SelectedObjects
-            .Where(x => (x is BeatmapNote note && note.Type != BeatmapNote.NoteTypeBomb) || x is BeatmapChain).Count();
+            .Where(x => x is BeatmapNote note && note.Type != BeatmapNote.NoteTypeBomb).Count();
 
     public float NPSselected
     {
@@ -91,9 +89,6 @@ public class CountersPlusController : MonoBehaviour
     }
 #pragma warning restore IDE1006 // Naming Styles
 
-    // I'm going to be doing some bit shift gaming, don't mind me
-    private CountersPlusStatistic stringRefreshQueue = CountersPlusStatistic.Invalid;
-
     private void Start()
     {
         Settings.NotifyBySettingName("CountersPlus", UpdateCountersVisibility);
@@ -112,16 +107,11 @@ public class CountersPlusController : MonoBehaviour
             BeatSaberSongContainer.Instance.Map.Time += Time.deltaTime / 60; // only tick while application is focused
 
             var timeMapping = BeatSaberSongContainer.Instance.Map.Time;
-            var newSeconds = Mathf.Abs(Mathf.FloorToInt(timeMapping * 60 % 60));
+            seconds = Mathf.Abs(Mathf.FloorToInt(timeMapping * 60 % 60));
+            minutes = Mathf.FloorToInt(timeMapping % 60);
+            hours = Mathf.FloorToInt(timeMapping / 60);
 
-            if (newSeconds != seconds)
-            {
-                seconds = newSeconds;
-                minutes = Mathf.FloorToInt(timeMapping % 60);
-                hours = Mathf.FloorToInt(timeMapping / 60);
-
-                timeMappingString.StringReference.RefreshString();
-            }
+            timeMappingString.StringReference.RefreshString();
         }
 
         var currentBpm = CurrentBPM;
@@ -129,29 +119,6 @@ public class CountersPlusController : MonoBehaviour
         {
             currentBpmString.StringReference.RefreshString();
             lastBpm = currentBpm;
-        }
-
-        // Might be a bit unreadable but I'm essentially checking if a bit is set corresponding to a specific statistic.
-        // If the bit is set (non-zero), it would update that particular statistic.
-        // This essentially ensures that each statistic can only be refreshed once per frame.
-        if (stringRefreshQueue > 0)
-        {
-            if ((stringRefreshQueue & CountersPlusStatistic.Notes) != 0)
-                UpdateNoteStats();
-
-            if ((stringRefreshQueue & CountersPlusStatistic.Obstacles) != 0)
-                obstacleString.StringReference.RefreshString();
-
-            if ((stringRefreshQueue & CountersPlusStatistic.Events) != 0)
-                eventString.StringReference.RefreshString();
-
-            if ((stringRefreshQueue & CountersPlusStatistic.BpmChanges) != 0)
-                bpmString.StringReference.RefreshString();
-
-            if ((stringRefreshQueue & CountersPlusStatistic.Selection) != 0)
-                UpdateSelectionStats();
-
-            stringRefreshQueue = 0;
         }
     }
 
@@ -167,8 +134,21 @@ public class CountersPlusController : MonoBehaviour
         if (!Settings.Instance.CountersPlus["enabled"])
             return;
 
-        // Bit shift stat into queue
-        stringRefreshQueue |= stat;
+        switch (stat)
+        {
+            case CountersPlusStatistic.Notes:
+                UpdateNoteStats();
+                break;
+            case CountersPlusStatistic.Obstacles:
+                obstacleString.StringReference.RefreshString();
+                break;
+            case CountersPlusStatistic.Events:
+                eventString.StringReference.RefreshString();
+                break;
+            case CountersPlusStatistic.BpmChanges:
+                bpmString.StringReference.RefreshString();
+                break;
+        }
     }
 
     private void LevelLoadedEvent()
@@ -178,7 +158,7 @@ public class CountersPlusController : MonoBehaviour
             UpdateStatistic((CountersPlusStatistic)enumValue);
     }
 
-    private void SelectionChangedEvent() => UpdateStatistic(CountersPlusStatistic.Selection);
+    private void SelectionChangedEvent() => UpdateSelectionStats();
 
     private void UpdateNoteStats()
     {

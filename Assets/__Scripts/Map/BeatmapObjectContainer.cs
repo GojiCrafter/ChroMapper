@@ -35,7 +35,7 @@ public abstract class BeatmapObjectContainer : MonoBehaviour
 
     public Track AssignedTrack { get; private set; }
 
-    public MaterialPropertyBlock MaterialPropertyBlock;
+    public MaterialPropertyBlock MaterialPropertyBlock { get; private set; }
 
     public abstract BeatmapObject ObjectData { get; set; }
 

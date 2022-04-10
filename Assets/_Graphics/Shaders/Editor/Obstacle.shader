@@ -29,8 +29,8 @@
             #include "UnityCG.cginc"
 
             // These are global properties and should not be instanced
+            uniform float _EditorScale = 4;
             uniform float _OutsideAlpha = 1;
-            uniform float _ObstacleFadeRadius = 8;
 
             // Define instanced properties
             UNITY_INSTANCING_BUFFER_START(Props)
@@ -58,6 +58,16 @@
                 float4 rotatedPos : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
+
+            float magnitude(float4 v)
+            {
+                return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+            }
+
+            float4 normalize(float4 v)
+            {
+                return v / magnitude(v);
+            }
 
             v2f vert (appdata v)
             {
@@ -129,15 +139,16 @@
                 /// Coloring ///
                 float4 color = UNITY_ACCESS_INSTANCED_PROP(Props, _ColorTint);
 
-                float mag = length(color);
+                float mag = magnitude(color);
+                float4 normal = normalize(color);
 
-                if (mag > 1)
+                if (mag > magnitude(normal))
                 {
-                    color = normalize(color) * sqrt(mag);
+                    color = normal * sqrt(mag);
                 }
 
+                float circleRadius = _EditorScale * 2;
                 float fadeSize = UNITY_ACCESS_INSTANCED_PROP(Props, _FadeSize);
-                float circleRadius = _ObstacleFadeRadius - fadeSize;
 
                 float distance = abs(i.rotatedPos.z);
 

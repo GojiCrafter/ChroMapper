@@ -12,7 +12,6 @@ public class BeatmapBPMChange : BeatmapObject
     public float Bpm;
     public float MetronomeOffset;
 
-    public BeatmapBPMChange() { }
     public BeatmapBPMChange(JSONNode node)
     {
         Time = RetrieveRequiredNode(node, "_time").AsFloat;

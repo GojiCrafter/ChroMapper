@@ -16,36 +16,16 @@ public class MapLoader : MonoBehaviour
 
     public void UpdateMapData(BeatSaberMap map)
     {
-        if (map is BeatSaberMapV3)
+        var copy = new BeatSaberMap
         {
-            var copy = new BeatSaberMapV3
-            {
-                CustomData = map.CustomData.Clone(),
-                Notes = new List<BeatmapNote>(map.Notes),
-                Obstacles = new List<BeatmapObstacle>(map.Obstacles),
-                Arcs = new List<BeatmapArc>((map as BeatSaberMapV3).Arcs),
-                Chains = new List<BeatmapChain>((map as BeatSaberMapV3).Chains),
-                Events = new List<MapEvent>(map.Events),
-                BpmChanges = new List<BeatmapBPMChange>(map.BpmChanges),
-                ColorBoostBeatmapEvents = new List<ColorBoostEvent>((map as BeatSaberMapV3).ColorBoostBeatmapEvents),
-                CustomEvents = new List<BeatmapCustomEvent>(map.CustomEvents)
-            };
-            this.map = copy;
-        }
-        else
-        {
-            var copy = new BeatSaberMap
-            {
-                CustomData = map.CustomData.Clone(),
-                Notes = new List<BeatmapNote>(map.Notes),
-                Obstacles = new List<BeatmapObstacle>(map.Obstacles),
-                Events = new List<MapEvent>(map.Events),
-                BpmChanges = new List<BeatmapBPMChange>(map.BpmChanges),
-                CustomEvents = new List<BeatmapCustomEvent>(map.CustomEvents)
-            };
-            this.map = copy;
-        }
-
+            CustomData = map.CustomData.Clone(),
+            Notes = new List<BeatmapNote>(map.Notes),
+            Obstacles = new List<BeatmapObstacle>(map.Obstacles),
+            Events = new List<MapEvent>(map.Events),
+            BpmChanges = new List<BeatmapBPMChange>(map.BpmChanges),
+            CustomEvents = new List<BeatmapCustomEvent>(map.CustomEvents)
+        };
+        this.map = copy;
     }
 
     public IEnumerator HardRefresh()
@@ -57,11 +37,6 @@ public class MapLoader : MonoBehaviour
         {
             yield return StartCoroutine(LoadObjects(map.BpmChanges));
             yield return StartCoroutine(LoadObjects(map.CustomEvents));
-        }
-        if (Settings.Instance.Load_MapV3)
-        {
-            yield return StartCoroutine(LoadObjects((map as BeatSaberMapV3).Arcs));
-            yield return StartCoroutine(LoadObjects((map as BeatSaberMapV3).Chains));
         }
 
         PersistentUI.Instance.LevelLoadSliderLabel.text = "Finishing up...";

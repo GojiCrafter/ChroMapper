@@ -7,8 +7,7 @@ using UnityEngine.Serialization;
 
 public class LightsManager : MonoBehaviour
 {
-    public static readonly float FadeTime = 1.5f;
-    public static readonly float FlashTime = 0.6f;
+    public static readonly float FadeTime = 2f;
     public static readonly float HDRIntensity = Mathf.GammaToLinearSpace(2.4169f);
     public static readonly float HDRFlashIntensity = Mathf.GammaToLinearSpace(3);
 
@@ -104,7 +103,7 @@ public class LightsManager : MonoBehaviour
         {
             light.UpdateTargetAlpha(1, 0);
             light.UpdateTargetColor(color * HDRFlashIntensity, 0);
-            light.UpdateTargetColor(color * HDRIntensity, FlashTime);
+            light.UpdateTargetColor(color * HDRIntensity, FadeTime);
         }
     }
 

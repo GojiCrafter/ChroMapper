@@ -56,11 +56,6 @@ public class SongListItem : RecyclingListViewItem, IPointerEnterHandler, IPointe
         // I have sinned
         songList = FindObjectOfType<SongList>();
 
-        InitCache();
-    }
-
-    private static void InitCache()
-    {
         if (songCoreCache != null) return;
         durationCachePath = Path.Combine(Settings.Instance.BeatSaberInstallation, "UserData", "SongCore",
             "SongDurationCache.dat");
@@ -119,8 +114,7 @@ public class SongListItem : RecyclingListViewItem, IPointerEnterHandler, IPointe
     {
         if (this.song == song && previousSearch == searchFieldText) return;
 
-        StopCoroutine(nameof(LoadImage));
-        StopCoroutine(nameof(LoadDuration));
+        StopAllCoroutines();
 
         previousSearch = searchFieldText;
         this.song = song;
@@ -139,8 +133,8 @@ public class SongListItem : RecyclingListViewItem, IPointerEnterHandler, IPointe
         favouritePreviewImage.gameObject.SetActive(this.song.IsFavourite);
         ignoreToggle = false;
 
-        StartCoroutine(nameof(LoadImage));
-        StartCoroutine(nameof(LoadDuration));
+        StartCoroutine(LoadImage());
+        StartCoroutine(LoadDuration());
     }
 
     private IEnumerator LoadImage()
@@ -179,8 +173,6 @@ public class SongListItem : RecyclingListViewItem, IPointerEnterHandler, IPointe
 
     public static void SetDuration(MonoBehaviour crTarget, string path, float length)
     {
-        InitCache();
-
         var songCoreCacheObj = songCoreCache.GetValueOrDefault(path, new JSONObject { ["id"] = "CMCachedDuration" });
         songCoreCacheObj["duration"] = length;
         songCoreCache.Add(path, songCoreCacheObj);

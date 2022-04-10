@@ -19,12 +19,8 @@ public abstract class BeatmapObject
         Obstacle,
         CustomNote,
         CustomEvent,
-        BpmChange,
-        Arc, // introduced in v3
-        Chain // introduced in v3
+        BpmChange
     }
-
-    public const string BeatmapObjectV3CustomDataKey = "cd";
 
     public abstract ObjectType BeatmapType { get; set; }
 
@@ -69,9 +65,6 @@ public abstract class BeatmapObject
             case BeatmapNote note:
                 objectData = new BeatmapNote(note.Time, note.LineIndex, note.LineLayer, note.Type,
                     note.CutDirection, originalData.CustomData?.Clone()) as T;
-                break;
-            case BeatmapArc arc:
-                objectData = new BeatmapArc(arc) as T;
                 break;
             default:
                 objectData =

@@ -53,7 +53,6 @@ public class MapEvent : BeatmapObject
     /*
      * MapEvent logic
      */
-    public MapEvent() { }
 
     public MapEvent(JSONNode node)
     {
