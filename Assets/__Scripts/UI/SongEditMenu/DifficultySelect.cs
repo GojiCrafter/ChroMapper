@@ -174,7 +174,10 @@ public class DifficultySelect : MonoBehaviour
         if (!currentCharacteristic.DifficultyBeatmaps.Contains(diff))
             currentCharacteristic.DifficultyBeatmaps.Add(diff);
 
-        var map = TryGetExistingMapFromDiff(localDiff) ?? new BeatSaberMap { MainNode = new JSONObject() };
+        var map = TryGetExistingMapFromDiff(localDiff) ?? (
+            Settings.Instance.Load_MapV3 ?
+            new BeatSaberMapV3 { MainNode = new JSONObject(), Version = "3.0.0" } :
+            new BeatSaberMap { MainNode = new JSONObject() });
         var oldPath = map.DirectoryAndFile;
 
         diff.UpdateName();
@@ -350,6 +353,9 @@ public class DifficultySelect : MonoBehaviour
 
             diffs[row.Name] = new DifficultySettings(map, true);
 
+            if (!string.IsNullOrEmpty(diffs[row.Name].CustomName)) diffs[row.Name].CustomName += " (Copy)";
+
+            row.NameInput.text = diffs[row.Name].CustomName;
             row.ShowDirtyObjects(diffs[row.Name]);
             row.SetInteractable(true);
             OnClick(row);

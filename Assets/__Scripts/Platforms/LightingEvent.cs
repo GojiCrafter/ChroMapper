@@ -29,6 +29,8 @@ public class LightingEvent : MonoBehaviour
 
     private BoostSprite boostSprite;
 
+    private bool isLightEnabled = true;
+
     private void Start()
     {
         lightPropertyBlock = new MaterialPropertyBlock();
@@ -62,11 +64,10 @@ public class LightingEvent : MonoBehaviour
         colorTime += Time.deltaTime;
         var color = Color.Lerp(currentColor, targetColor, colorTime / timeToTransitionColor);
 
-        lightPropertyBlock.SetColor("_EmissionColor", color);
-
         if (!CanBeTurnedOff)
         {
             lightPropertyBlock.SetColor("_BaseColor", Color.white);
+            lightPropertyBlock.SetColor("_EmissionColor", color);
             SetEmission(true);
             lightRenderer.SetPropertyBlock(lightPropertyBlock);
             return;
@@ -75,11 +76,14 @@ public class LightingEvent : MonoBehaviour
         alphaTime += Time.deltaTime;
         var alpha = Mathf.Lerp(currentAlpha, targetAlpha, alphaTime / timeToTransitionAlpha) * multiplyAlpha;
 
-        lightPropertyBlock.SetColor("_BaseColor", Color.white * alpha);
-
         SetEmission(alpha > 0);
 
-        lightRenderer.SetPropertyBlock(lightPropertyBlock);
+        if (isLightEnabled)
+        {
+            lightPropertyBlock.SetColor("_EmissionColor", color);
+            lightPropertyBlock.SetColor("_BaseColor", Color.white * alpha);
+            lightRenderer.SetPropertyBlock(lightPropertyBlock);
+        }
     }
 
     public void UpdateTargetColor(Color target, float timeToTransition)
@@ -123,15 +127,9 @@ public class LightingEvent : MonoBehaviour
 
     private void SetEmission(bool enabled)
     {
-        /*if (enabled)
+        if (isLightEnabled != enabled)
         {
-            LightMaterial.EnableKeyword("_EMISSION");
-            LightMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.AnyEmissive;
+            lightRenderer.enabled = isLightEnabled = enabled;
         }
-        else
-        {
-            LightMaterial.DisableKeyword("_EMISSION");
-            LightMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
-        }*/
     }
 }

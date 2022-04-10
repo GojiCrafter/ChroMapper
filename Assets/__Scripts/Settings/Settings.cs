@@ -60,11 +60,13 @@ public class Settings
     public float PastNotesGridScale = 0.5f;
     public float CameraFOV = 60f;
     public int CameraAA = 0;
+    public int RenderScale = 100;
     public bool WaveformWorkflow = true;
     public bool Load_Events = true;
     public bool Load_Notes = true;
     public bool Load_Obstacles = true;
     public bool Load_Others = true;
+    public bool Load_MapV3 = false;
     public bool ShowMoreAccurateFastWalls = false;
     public int TimeValueDecimalPrecision = 3;
     public bool Ding_Red_Notes = true;

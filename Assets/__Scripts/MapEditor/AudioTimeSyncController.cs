@@ -7,8 +7,10 @@ using UnityEngine.UI;
 
 public class AudioTimeSyncController : MonoBehaviour, CMInput.IPlaybackActions, CMInput.ITimelineActions
 {
-    private const float cancelPlayInputDuration = 0.3f;
     public static readonly string PrecisionSnapName = "PrecisionSnap";
+
+    private static readonly int songTime = Shader.PropertyToID("_SongTime");
+    private const float cancelPlayInputDuration = 0.3f;
 
     [FormerlySerializedAs("songAudioSource")] public AudioSource SongAudioSource;
     [SerializeField] private AudioSource waveformSource;
@@ -119,7 +121,7 @@ public class AudioTimeSyncController : MonoBehaviour, CMInput.IPlaybackActions, 
             if (!levelLoaded) return;
             if (IsPlaying)
             {
-                var time = currentSeconds + audioLatencyCompensationSeconds;
+                var time = currentSeconds + (audioLatencyCompensationSeconds * (songSpeed / 10f));
 
                 // Slightly more accurate than songAudioSource.time
                 var trackTime = CurrentSongSeconds;
@@ -145,7 +147,7 @@ public class AudioTimeSyncController : MonoBehaviour, CMInput.IPlaybackActions, 
 
                 // Add frame time to current time
                 CurrentSeconds = time + (correction * (Time.deltaTime * (songSpeed / 10f))) -
-                                 audioLatencyCompensationSeconds;
+                                 (audioLatencyCompensationSeconds * (songSpeed / 10f));
             }
         }
         catch (Exception e)
@@ -217,6 +219,31 @@ public class AudioTimeSyncController : MonoBehaviour, CMInput.IPlaybackActions, 
         }
     }
 
+    /// <summary>
+    /// Newly introduced in beatmap V3, because arc and chain need `shift + scroll`, 
+    /// which override default input for `shift` for <see cref="OnChangePrecisionModifier(InputAction.CallbackContext)"/> and `scroll` for <see cref="OnChangeTimeandPrecision(InputAction.CallbackContext)"/>
+    /// </summary>
+    /// <param name="context"></param>
+    public void OnPreciselyChangeTimeandPrecision(InputAction.CallbackContext context)
+    {
+        if (!KeybindsController.IsMouseInWindow ||
+            customStandaloneInputModule.IsPointerOverGameObject<GraphicRaycaster>(-1, true))
+        {
+            return;
+        }
+
+        var value = context.ReadValue<float>();
+        if (context.performed)
+        {
+            float scrollDirection;
+            if (Settings.Instance.InvertPrecisionScroll) scrollDirection = value > 0 ? 0.5f : 2;
+            else scrollDirection = value > 0 ? 2 : 0.5f;
+
+            var addition = scrollDirection > 1 ? 1 : -1;
+            GridMeasureSnapping = Mathf.Clamp(GridMeasureSnapping + addition, 1, 64);
+        }
+    }
+    
     public void OnChangePrecisionModifier(InputAction.CallbackContext context) => controlSnap = context.performed;
 
     public void OnPreciseSnapModification(InputAction.CallbackContext context) =>
@@ -230,12 +257,15 @@ public class AudioTimeSyncController : MonoBehaviour, CMInput.IPlaybackActions, 
 
     private void UpdateMovables()
     {
+        Shader.SetGlobalFloat(songTime, currentBeat);
+
         var position = currentBeat * EditorScaleController.EditorScale;
 
         gridRenderingController.UpdateOffset(position);
 
         tracksManager.UpdatePosition(position * -1);
         foreach (var track in otherTracks) track.UpdatePosition(position * -1);
+        
         TimeChanged?.Invoke();
     }
 
@@ -272,7 +302,7 @@ public class AudioTimeSyncController : MonoBehaviour, CMInput.IPlaybackActions, 
             SongAudioSource.Play();
 
             audioLatencyCompensationSeconds = Settings.Instance.AudioLatencyCompensation / 1000f;
-            CurrentSeconds -= audioLatencyCompensationSeconds;
+            CurrentSeconds -= audioLatencyCompensationSeconds * (songSpeed / 10f);
         }
         else
         {
